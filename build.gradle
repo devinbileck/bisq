@@ -11,6 +11,21 @@ buildscript {
     }
 }
 
+task('verifyFileHash') {
+    def hash = { File file ->
+        def md = java.security.MessageDigest.getInstance('MD5')
+        file.eachByte(1024 * 4) { buffer, len ->
+            md.update(buffer, 0, len)
+        }
+        return md.digest().encodeHex().toString()
+    }
+    def files = [
+        'gradle/witness/gradle-witness.jar':'ae4796f320ef3200515183fa9d3f4759',
+        'gradle/wrapper/gradle-wrapper.jar':'7d7d78c91ccaaa93a19578ae254bc264',
+        'desktop/package/macosx/tools-1.0.jar':'e48fdf79e30b61a06f753e084342c1de'
+    ]
+    files.each{ filepath, filehash -> assert hash(file(filepath)) == filehash : "File ${filepath} does not match hash ${filehash}" }
+}
 
 configure(subprojects) {
     apply plugin: 'java'
