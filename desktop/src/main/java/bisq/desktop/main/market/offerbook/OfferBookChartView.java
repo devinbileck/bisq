@@ -114,10 +114,14 @@ public class OfferBookChartView extends ActivatableViewAndModel<VBox, OfferBookC
     private ListChangeListener<CurrencyListItem> currencyListItemsListener;
     private ChangeListener<Number> bisqWindowVerticalSizeListener;
     private final double initialOfferTableViewHeight = 109;
+    private final double initialOfferChartHeight = 250;
     private final double pixelsPerOfferTableRow = (initialOfferTableViewHeight / 4.0) + 10.0; // initial visible row count=4
     private final Function<Double, Double> offerTableViewHeight = (screenSize) -> {
-        int extraRows = screenSize <= INITIAL_SCENE_HEIGHT ? 0 : (int) ((screenSize - INITIAL_SCENE_HEIGHT) / pixelsPerOfferTableRow);
+        int extraRows = screenSize <= INITIAL_WINDOW_HEIGHT ? 0 : (int) ((screenSize - INITIAL_WINDOW_HEIGHT) / pixelsPerOfferTableRow);
         return extraRows == 0 ? initialOfferTableViewHeight : Math.ceil(initialOfferTableViewHeight + (extraRows * pixelsPerOfferTableRow));
+    };
+    private final Function<Double, Double> offerChartViewHeight = (screenSize) -> {
+        return screenSize <= INITIAL_WINDOW_HEIGHT ? initialOfferChartHeight : (int) ((initialOfferChartHeight + screenSize - INITIAL_WINDOW_HEIGHT));
     };
 
     ///////////////////////////////////////////////////////////////////////////////////////////
@@ -284,6 +288,11 @@ public class OfferBookChartView extends ActivatableViewAndModel<VBox, OfferBookC
             if (buyOfferTableView.getHeight() != newTableViewHeight) {
                 buyOfferTableView.setMinHeight(newTableViewHeight);
                 sellOfferTableView.setMinHeight(newTableViewHeight);
+            }
+            double newChartViewHeight = offerChartViewHeight.apply(newValue.doubleValue());
+            log.debug(Double.toString(newChartViewHeight));
+            if (areaChart.getHeight() != newChartViewHeight) {
+                areaChart.setMinHeight(newChartViewHeight);
             }
         };
         root.getScene().heightProperty().addListener(bisqWindowVerticalSizeListener);
