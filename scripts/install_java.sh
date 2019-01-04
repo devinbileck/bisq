@@ -6,6 +6,9 @@
 #     update-alternatives --config java
 #     update-alternatives --config javac
 
+# TODO: Install OracleJDK 10 as well, since it is necessary for packaging scripts
+# wget --no-check-certificate --no-cookies --header "Cookie: oraclelicense=accept-securebackup-cookie" https://download.oracle.com/otn/java/jdk/10.0.2+13/19aef61b38124481863b1413dce1855f/jdk-10.0.2_linux-x64_bin.tar.gz
+
 JAVA_HOME=/usr/lib/jvm/openjdk-10.0.2
 JDK_FILENAME=openjdk-10.0.2_linux-x64_bin.tar.gz
 JDK_URL=https://download.java.net/java/GA/jdk10/10.0.2/19aef61b38124481863b1413dce1855f/13/openjdk-10.0.2_linux-x64_bin.tar.gz
@@ -25,8 +28,10 @@ do
     fi
 done
 
-if [ ! -d "$JAVA_HOME" ]; then
-    # Ensure curl is installed since it may not be
+if [ -d "$JAVA_HOME" ]; then
+    echo $JAVA_HOME already exists, skipping install
+else
+    # Ensure curl is installed since it may not be by default for certain distributions
     $PACKAGE_MANAGER -y install curl
 
     curl -L -O $JDK_URL

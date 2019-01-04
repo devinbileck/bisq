@@ -4,6 +4,9 @@
 :: change the JAVA_HOME environment variable. For example, use the following command:
 ::     setx /M JAVA_HOME "<JDK_PATH>"
 
+:: TODO: Install OracleJDK 10 as well, since it is necessary for packaging scripts
+:: https://download.oracle.com/otn/java/jdk/10.0.2+13/19aef61b38124481863b1413dce1855f/jdk-10.0.2_windows-x64_bin.exe
+
 @echo off
 
 :: Ensure we have administrative privileges in order to install files and set environment variables
