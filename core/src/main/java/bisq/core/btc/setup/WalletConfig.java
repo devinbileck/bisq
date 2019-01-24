@@ -473,7 +473,7 @@ public class WalletConfig extends AbstractIdleService {
                 vPeerGroup.startBlockChainDownload(listener);
                 listener.await();
             } else {
-                Futures.addCallback(vPeerGroup.startAsync(), new FutureCallback() {
+                Futures.addCallback(vPeerGroup.startAsync(), new FutureCallback<>() {
                     @Override
                     public void onSuccess(@Nullable Object result) {
                         final PeerDataEventListener listener = downloadListener == null ?

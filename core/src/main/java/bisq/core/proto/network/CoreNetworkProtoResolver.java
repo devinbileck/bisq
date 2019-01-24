@@ -201,6 +201,7 @@ public class CoreNetworkProtoResolver extends CoreProtoResolver implements Netwo
                     return Filter.fromProto(proto.getFilter());
                 case TRADE_STATISTICS:
                     // Still used to convert TradeStatistics data from pre v0.6 versions
+                    //noinspection deprecation
                     return TradeStatistics.fromProto(proto.getTradeStatistics());
                 case MAILBOX_STORAGE_PAYLOAD:
                     return MailboxStoragePayload.fromProto(proto.getMailboxStoragePayload());

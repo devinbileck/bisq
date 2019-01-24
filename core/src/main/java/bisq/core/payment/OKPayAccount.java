@@ -24,6 +24,9 @@ import bisq.core.payment.payload.PaymentMethod;
 
 import lombok.EqualsAndHashCode;
 
+/**
+ * @deprecated OkPay has rebranded to Weezzo
+ */
 @Deprecated
 @EqualsAndHashCode(callSuper = true)
 public final class OKPayAccount extends PaymentAccount {

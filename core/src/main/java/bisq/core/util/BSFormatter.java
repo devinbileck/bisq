@@ -47,6 +47,7 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import java.util.Date;
 import java.util.List;
@@ -183,7 +184,7 @@ public class BSFormatter {
     public Coin parseToCoinWith4Decimals(String input) {
         try {
             return Coin.valueOf(new BigDecimal(parseToCoin(cleanDoubleInput(input)).value).setScale(-scale - 1,
-                    BigDecimal.ROUND_HALF_UP).setScale(scale + 1, BigDecimal.ROUND_HALF_UP).toBigInteger().longValue());
+                    RoundingMode.HALF_UP).setScale(scale + 1, RoundingMode.HALF_UP).toBigInteger().longValue());
         } catch (Throwable t) {
             if (input != null && input.length() > 0)
                 log.warn("Exception at parseToCoinWith4Decimals: " + t.toString());
@@ -253,7 +254,7 @@ public class BSFormatter {
     public Fiat parseToFiatWithPrecision(String input, String currencyCode) {
         if (input != null && input.length() > 0) {
             try {
-                return parseToFiat(new BigDecimal(cleanDoubleInput(input)).setScale(2, BigDecimal.ROUND_HALF_UP).toString(),
+                return parseToFiat(new BigDecimal(cleanDoubleInput(input)).setScale(2, RoundingMode.HALF_UP).toString(),
                         currencyCode);
             } catch (Throwable t) {
                 log.warn("Exception at parseToFiatWithPrecision: " + t.toString());
