@@ -14,14 +14,15 @@ runcmd:
     - sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
     - sed -i -e '$aAllowUsers bisq' /etc/ssh/sshd_config
     - restart ssh
-    - su - bisq
-    - cd ~/
+    - cd /home/bisq
     - git clone https://github.com/devinbileck/bisq.git
     - cd bisq
-    - git checkout -b deployment
+    - git checkout deployment
     - chmod +x scripts/*.sh
     - ./scripts/install_java.sh
     - ./gradlew build
-    - ./scripts/install_bitcoind.sh
-    - ./scripts/setup_dao.sh
-    - ./scripts/run_seednode.sh &
+    - cd /home/bisq
+    - su -c /home/bisq/bisq/scripts/install_bitcoind.sh - bisq
+    - su -c /home/bisq/bisq/scripts/setup_dao.sh - bisq
+    - su -c "bitcoind -daemon" - bisq
+    - su -c /home/bisq/bisq/scripts/run_seednode.sh - bisq &
