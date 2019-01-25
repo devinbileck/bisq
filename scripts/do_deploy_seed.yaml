@@ -1,0 +1,58 @@
+#cloud-config
+# This is used as user data when deploying a droplet on Digital Ocean to configure it as a seed node.
+users:
+    - name: bisq
+      ssh-authorized-keys:
+          - ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAiUUQ8cnOo57g/em14BXUe4QbvM36Px6mAr0lq5ldkf0AhH3IFLGS1Z/w3lI2Z1/TvCjdEgpU7e4Z12vBNRtSvx1hf0sSE2+f/rpgPyAPQV48QAsdenYf9s19aJiOTvRyrF3wTILlCXxsLNY/Vd7nZPsv5tZD78THgrOwUKKh4O7oR6W7Nf3o0YVfA+e0YelqRO4P8/MJbBUuxndnOPiboTlk2L6vttWsvJKrzJcZ+b+89eZCK6GBlvSxk86TJmH4RVxX/qF+OZI/B2Gvw03o8VPWPczDUufpH+u5jPaywROq73s2+iylVjr3vCWZtUVBc5yy2/su6364tk5WUv5jcw== devin
+          - ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAh1Ueub7G5vwmgpVVNhvdR1QRWiZIDza2Le70Vrsusy3Y/RLXTw4h5GYX7lnV6Cwuor4UjPpnfhs2z/CCHTUK0RU2BFuN+I+5yDIM/teSffA7+jyNpjmC3KEcpn5ZSw4dsCCd0n+uDWPelgOOhYeNiwACOOtv5qkOzCGNoFvDAowTxsBbFjpmdqnQBtsgf7pyjFon0iKErVhyRsB5jqLUNvD85ZOvkRNE9elCalcMNGoLauII/3LyOqXzfpuhqRYFWiCD/r/3D+QnPXLxmWRA7OzOmeVEkI9BtHKID/FAzOkhJ2YmMuFjaLKcSBbYBq2d9UYpLggHCcd6JEokJnjPlw== devin
+      sudo: ['ALL=(ALL) NOPASSWD:ALL']
+      groups: sudo
+      shell: /bin/bash
+packages:
+    - unzip
+write_files:
+    - path: /home/bisq/seed_node.sh
+      permissions: 0744
+      content: |
+          #!/usr/bin/env bash
+          PUBLIC_IPV4=$(curl -s http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address)
+          /home/bisq/bisq/bisq-seednode --appName=bisq-BTC_REGTEST_Seed_2002 --baseCurrencyNetwork=BTC_REGTEST --useLocalhostForP2P=true --nodePort=2002 --myAddress=$PUBLIC_IPV4:2002 --useDevPrivilegeKeys=true --daoActivated=true --genesisBlockHeight=111 --genesisTxId=30af0050040befd8af25068cc697e418e09c2d8ebd8d411d2240591b9ec203cf --fullDaoNode=true --rpcUser=bitcoin --rpcPassword=fwAfAp7K0yz --rpcPort=18443 --rpcBlockNotificationPort=5120 >/dev/null 2>bisq-BTC_REGTEST_Seed_2002.log
+    - path: /root/.bitcoin/bitcoin.conf
+      content: |
+          regtest=1
+
+          # The default rpcPort for regtest from Bitcoin Core 0.16 and higher is: 18443
+          # The default rpcPort for testnet is: 18332
+          # For mainnet: 8332
+          rpcport=18443
+
+          server=1
+          txindex=1
+          rpcuser=bitcoin
+          rpcpassword=fwAfAp7K0yz
+          blocknotify=bash ~/.bitcoin/blocknotify %s
+    - path: /home/bisq/.bitcoin/blocknotify
+      content: |
+          #!/bin/bash
+          echo $1 | nc -w 1 127.0.0.1 5120
+runcmd:
+    - sed -i -e '/^PermitRootLogin/s/^.*$/PermitRootLogin no/' /etc/ssh/sshd_config
+    - sed -i -e '$aAllowUsers bisq' /etc/ssh/sshd_config
+    - restart ssh
+    - cd /home/bisq
+    - git clone https://github.com/bisq-network/bisq.git
+    - cd bisq
+    - chmod +x scripts/install_java.sh
+    - ./scripts/install_java.sh
+    - ./gradlew build
+    - wget -O /home/bisq/dao-setup.zip https://github.com/bisq-network/bisq/blob/master/docs/dao-setup.zip?raw=true
+    - unzip dao-setup.zip
+    - rm dao-setup.zip
+    - cp -r dao-setup/Bitcoin-regtest/regtest /root/.bitcoin
+    - wget https://bitcoin.org/bin/bitcoin-core-0.17.1/bitcoin-0.17.1-x86_64-linux-gnu.tar.gz
+    - tar -xvf bitcoin-0.17.1-x86_64-linux-gnu.tar.gz
+    - rm bitcoin-0.17.1-x86_64-linux-gnu.tar.gz
+    - cp bitcoin-0.17.1/bin/* /usr/local/bin
+    - rm -fr bitcoin-0.17.1
+    - bitcoind -daemon
+    - ./seed_node.sh &
