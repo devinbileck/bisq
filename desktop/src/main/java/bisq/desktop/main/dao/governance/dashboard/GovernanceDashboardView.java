@@ -24,8 +24,8 @@ import bisq.desktop.util.FormBuilder;
 import bisq.desktop.util.Layout;
 
 import bisq.core.dao.DaoFacade;
+import bisq.core.dao.governance.period.PeriodService;
 import bisq.core.dao.state.DaoStateListener;
-import bisq.core.dao.state.model.blockchain.Block;
 import bisq.core.dao.state.model.governance.DaoPhase;
 import bisq.core.locale.Res;
 import bisq.core.util.BSFormatter;
@@ -49,6 +49,7 @@ import static bisq.desktop.util.FormBuilder.addTopLabelReadOnlyTextField;
 @FxmlView
 public class GovernanceDashboardView extends ActivatableView<GridPane, Void> implements DaoStateListener {
     private final DaoFacade daoFacade;
+    private final PeriodService periodService;
     private final PhasesView phasesView;
     private final BSFormatter formatter;
 
@@ -61,8 +62,9 @@ public class GovernanceDashboardView extends ActivatableView<GridPane, Void> imp
     ///////////////////////////////////////////////////////////////////////////////////////////
 
     @Inject
-    public GovernanceDashboardView(DaoFacade daoFacade, PhasesView phasesView, BSFormatter formatter) {
+    public GovernanceDashboardView(DaoFacade daoFacade, PeriodService periodService, PhasesView phasesView, BSFormatter formatter) {
         this.daoFacade = daoFacade;
+        this.periodService = periodService;
         this.phasesView = phasesView;
         this.formatter = formatter;
     }
@@ -112,10 +114,6 @@ public class GovernanceDashboardView extends ActivatableView<GridPane, Void> imp
     }
 
     @Override
-    public void onParseTxsComplete(Block block) {
-    }
-
-    @Override
     public void onParseBlockChainComplete() {
     }
 
@@ -126,7 +124,13 @@ public class GovernanceDashboardView extends ActivatableView<GridPane, Void> imp
 
     private void applyData(int height) {
         currentBlockHeightTextField.setText(String.valueOf(daoFacade.getChainHeight()));
-        currentPhaseTextField.setText(Res.get("dao.phase." + daoFacade.phaseProperty().get().name()));
+        DaoPhase.Phase phase = daoFacade.phaseProperty().get();
+        // If we are in last block of proposal, blindVote or voteReveal phase we show following break.
+        if (!periodService.isInPhaseButNotLastBlock(phase) &&
+                (phase == DaoPhase.Phase.PROPOSAL || phase == DaoPhase.Phase.BLIND_VOTE || phase == DaoPhase.Phase.VOTE_REVEAL)) {
+            phase = periodService.getPhaseForHeight(height + 1);
+        }
+        currentPhaseTextField.setText(Res.get("dao.phase." + phase.name()));
         proposalTextField.setText(getPhaseDuration(height, DaoPhase.Phase.PROPOSAL));
         blindVoteTextField.setText(getPhaseDuration(height, DaoPhase.Phase.BLIND_VOTE));
         voteRevealTextField.setText(getPhaseDuration(height, DaoPhase.Phase.VOTE_REVEAL));
