@@ -15,6 +15,7 @@ set deb=Bisq-%version%.deb
 set exe=Bisq-%version%.exe
 
 set /P gpg_user="Enter email address used for gpg signing: "
+set /P vt_api_key="Enter VirusTotal API key: "
 
 echo Creating release directory
 if exist "%release_dir%" (
@@ -65,6 +66,10 @@ if exist "%release_dir%\%deb%" (
 if exist "%release_dir%\%exe%" (
     gpg --digest-algo SHA256 --verify "%release_dir%\%exe%.asc"
 )
+
+echo Submitting files to VirusTotal to ensure that they are not being flagged as false positives
+::powershell -Command "(new-object net.webclient).DownloadString('https://www.virustotal.com/vtapi/v2/file/scan')"
+curl -v -F 'file=@%release_dir%\%exe%' -F apikey=%vt_api_key% https://www.virustotal.com/vtapi/v2/file/scan
 
 echo Done!
 pause
