@@ -66,13 +66,6 @@ public class BsqFormatter extends BSFormatter {
             case "BTC":
                 coinFormat = new MonetaryFormat().shift(6).code(6, "BSQ").minDecimals(2);
                 break;
-            case "LTC":
-                coinFormat = new MonetaryFormat().shift(3).code(3, "BSQ").minDecimals(5);
-                break;
-            case "DASH":
-                // BSQ for DASH not used/supported
-                coinFormat = new MonetaryFormat().shift(3).code(3, "???").minDecimals(5);
-                break;
             default:
                 throw new RuntimeException("baseCurrencyCode not defined. baseCurrencyCode=" + baseCurrencyCode);
         }
@@ -162,7 +155,8 @@ public class BsqFormatter extends BSFormatter {
     public String formatParamValue(Param param, String value) {
         switch (param.getParamType()) {
             case UNDEFINED:
-                throw new IllegalArgumentException("ParamType UNDEFINED. param: " + param);
+                // In case we add a new param old clients will not know that enum and fall back to UNDEFINED.
+                return "";
             case BSQ:
                 return formatCoinWithCode(parseToCoin(value));
             case BTC:

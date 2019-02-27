@@ -81,6 +81,7 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 
@@ -182,6 +183,8 @@ public class MainView extends InitializableView<StackPane, MainViewModel> {
 
         JFXBadge portfolioButtonWithBadge = new JFXBadge(portfolioButton);
         JFXBadge disputesButtonWithBadge = new JFXBadge(disputesButton);
+        JFXBadge daoButtonWithBadge = new JFXBadge(daoButton);
+        daoButtonWithBadge.getStyleClass().add("new");
 
         root.sceneProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
@@ -246,7 +249,7 @@ public class MainView extends InitializableView<StackPane, MainViewModel> {
         HBox.setHgrow(primaryNav, Priority.SOMETIMES);
 
         HBox secondaryNav = new HBox(disputesButtonWithBadge, getNavigationSpacer(), settingsButton,
-                getNavigationSpacer(), accountButton, getNavigationSpacer(), daoButton);
+                getNavigationSpacer(), accountButton, getNavigationSpacer(), daoButtonWithBadge);
         secondaryNav.getStyleClass().add("nav-secondary");
         HBox.setHgrow(secondaryNav, Priority.SOMETIMES);
 
@@ -289,6 +292,7 @@ public class MainView extends InitializableView<StackPane, MainViewModel> {
 
         setupBadge(portfolioButtonWithBadge, model.getNumPendingTrades(), model.getShowPendingTradesNotification());
         setupBadge(disputesButtonWithBadge, model.getNumOpenDisputes(), model.getShowOpenDisputesNotification());
+        setupBadge(daoButtonWithBadge, new SimpleStringProperty(Res.get("shared.new")), model.getShowDaoUpdatesNotification());
 
         navigation.addListener(viewPath -> {
             if (viewPath.size() != 2 || viewPath.indexOf(MainView.class) != 0)
@@ -462,7 +466,7 @@ public class MainView extends InitializableView<StackPane, MainViewModel> {
 
         btcSyncIndicator = new JFXProgressBar();
         btcSyncIndicator.setPrefWidth(305);
-        btcSyncIndicator.progressProperty().bind(model.getBtcSyncProgress());
+        btcSyncIndicator.progressProperty().bind(model.getCombinedSyncProgress());
 
         ImageView btcSyncIcon = new ImageView();
         btcSyncIcon.setVisible(false);
@@ -495,6 +499,13 @@ public class MainView extends InitializableView<StackPane, MainViewModel> {
         splashP2PNetworkLabel.getStyleClass().add("sub-info");
         splashP2PNetworkLabel.textProperty().bind(model.getP2PNetworkInfo());
 
+        Button showTorNetworkSettingsButton = new AutoTooltipButton(Res.get("settings.net.openTorSettingsButton"));
+        showTorNetworkSettingsButton.setVisible(false);
+        showTorNetworkSettingsButton.setManaged(false);
+        showTorNetworkSettingsButton.setOnAction(e -> {
+            model.getTorNetworkSettingsWindow().show();
+        });
+
         splashP2PNetworkBusyAnimation = new BusyAnimation(false);
 
         splashP2PNetworkErrorMsgListener = (ov, oldValue, newValue) -> {
@@ -504,20 +515,19 @@ public class MainView extends InitializableView<StackPane, MainViewModel> {
                 splashP2PNetworkLabel.getStyleClass().add("error-text");
                 splashP2PNetworkBusyAnimation.setDisable(true);
                 splashP2PNetworkBusyAnimation.stop();
+                showTorNetworkSettingsButton.setVisible(true);
+                showTorNetworkSettingsButton.setManaged(true);
+                if (model.getUseTorForBTC().get()) {
+                    // If using tor for BTC, hide the BTC status since tor is not working
+                    btcSyncIndicator.setVisible(false);
+                    btcSplashInfo.setVisible(false);
+                }
             } else if (model.getSplashP2PNetworkAnimationVisible().get()) {
                 splashP2PNetworkBusyAnimation.setDisable(false);
                 splashP2PNetworkBusyAnimation.play();
             }
         };
         model.getP2pNetworkWarnMsg().addListener(splashP2PNetworkErrorMsgListener);
-
-
-        Button showTorNetworkSettingsButton = new AutoTooltipButton(Res.get("settings.net.openTorSettingsButton"));
-        showTorNetworkSettingsButton.setVisible(false);
-        showTorNetworkSettingsButton.setManaged(false);
-        showTorNetworkSettingsButton.setOnAction(e -> {
-            model.getTorNetworkSettingsWindow().show();
-        });
 
         ImageView splashP2PNetworkIcon = new ImageView();
         splashP2PNetworkIcon.setId("image-connection-tor");
@@ -528,6 +538,11 @@ public class MainView extends InitializableView<StackPane, MainViewModel> {
         Timer showTorNetworkSettingsTimer = UserThread.runAfter(() -> {
             showTorNetworkSettingsButton.setVisible(true);
             showTorNetworkSettingsButton.setManaged(true);
+            if (btcSyncIndicator.progressProperty().getValue() <= 0) {
+                // If no progress has been made, hide the BTC status since tor is not working
+                btcSyncIndicator.setVisible(false);
+                btcSplashInfo.setVisible(false);
+            }
         }, SHOW_TOR_SETTINGS_DELAY_SEC);
 
         splashP2PNetworkIconIdListener = (ov, oldValue, newValue) -> {
@@ -588,10 +603,10 @@ public class MainView extends InitializableView<StackPane, MainViewModel> {
         btcInfoLabel.setId("footer-pane");
         btcInfoLabel.textProperty().bind(model.getBtcInfo());
 
-        ProgressBar blockchainSyncIndicator = new ProgressBar(-1);
-        blockchainSyncIndicator.setPrefWidth(120);
+        ProgressBar blockchainSyncIndicator = new JFXProgressBar(-1);
+        blockchainSyncIndicator.setPrefWidth(80);
         blockchainSyncIndicator.setMaxHeight(10);
-        blockchainSyncIndicator.progressProperty().bind(model.getBtcSyncProgress());
+        blockchainSyncIndicator.progressProperty().bind(model.getCombinedSyncProgress());
 
         model.getWalletServiceErrorMsg().addListener((ov, oldValue, newValue) -> {
             if (newValue != null) {
@@ -608,7 +623,7 @@ public class MainView extends InitializableView<StackPane, MainViewModel> {
             }
         });
 
-        model.getBtcSyncProgress().addListener((ov, oldValue, newValue) -> {
+        model.getCombinedSyncProgress().addListener((ov, oldValue, newValue) -> {
             if ((double) newValue >= 1) {
                 blockchainSyncIndicator.setVisible(false);
                 blockchainSyncIndicator.setManaged(false);

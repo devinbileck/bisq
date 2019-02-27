@@ -105,7 +105,7 @@ public class MyProposalListService implements PersistedDataHost, DaoStateListene
 
     @Override
     public void readPersisted() {
-        if (BisqEnvironment.isDAOActivatedAndBaseCurrencySupportingBsq()) {
+        if (DevEnv.isDaoActivated()) {
             MyProposalList persisted = storage.initAndGetPersisted(myProposalList, 100);
             if (persisted != null) {
                 myProposalList.clear();
@@ -119,10 +119,6 @@ public class MyProposalListService implements PersistedDataHost, DaoStateListene
     ///////////////////////////////////////////////////////////////////////////////////////////
     // DaoStateListener
     ///////////////////////////////////////////////////////////////////////////////////////////
-
-    @Override
-    public void onNewBlockHeight(int blockHeight) {
-    }
 
     @Override
     public void onParseBlockChainComplete() {
@@ -225,7 +221,8 @@ public class MyProposalListService implements PersistedDataHost, DaoStateListene
 
     private void rePublishOnceWellConnected() {
         int minPeers = BisqEnvironment.getBaseCurrencyNetwork().isMainnet() ? 4 : 1;
-        if ((p2PService.getNumConnectedPeers().get() > minPeers && p2PService.isBootstrapped())) {
+        if ((p2PService.getNumConnectedPeers().get() >= minPeers && p2PService.isBootstrapped()) ||
+                BisqEnvironment.getBaseCurrencyNetwork().isRegtest()) {
             p2PService.getNumConnectedPeers().removeListener(numConnectedPeersListener);
             rePublish();
         }

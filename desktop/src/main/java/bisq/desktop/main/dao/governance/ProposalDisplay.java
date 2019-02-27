@@ -17,9 +17,14 @@
 
 package bisq.desktop.main.dao.governance;
 
+import bisq.desktop.Navigation;
 import bisq.desktop.components.HyperlinkWithIcon;
 import bisq.desktop.components.InputTextField;
 import bisq.desktop.components.TitledGroupBg;
+import bisq.desktop.main.MainView;
+import bisq.desktop.main.dao.DaoView;
+import bisq.desktop.main.dao.bonding.BondingView;
+import bisq.desktop.main.dao.bonding.bonds.BondsView;
 import bisq.desktop.util.FormBuilder;
 import bisq.desktop.util.GUIUtil;
 import bisq.desktop.util.Layout;
@@ -88,9 +93,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Nullable;
 
-import static bisq.desktop.util.FormBuilder.addInputTextField;
-import static bisq.desktop.util.FormBuilder.addTitledGroupBg;
-import static bisq.desktop.util.FormBuilder.addTopLabelTextField;
+import static bisq.desktop.util.FormBuilder.*;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 @SuppressWarnings("ConstantConditions")
@@ -103,11 +106,11 @@ public class ProposalDisplay {
     // Nullable because if we are in result view mode (readonly) we don't need to set the input validator)
     @Nullable
     private final ChangeParamValidator changeParamValidator;
+    private final Navigation navigation;
 
     @Nullable
     private TextField proposalFeeTextField, comboBoxValueTextField, requiredBondForRoleTextField;
     private TextField proposalTypeTextField, myVoteTextField, voteResultTextField;
-    private Label myVoteLabel, voteResultLabel;
     public InputTextField nameTextField;
     public InputTextField linkInputTextField;
     @Nullable
@@ -136,15 +139,15 @@ public class ProposalDisplay {
     private ChangeListener<BondedRoleType> requiredBondForRoleListener;
     private TitledGroupBg titledGroupBg;
     private int titledGroupBgRowSpan;
-    private VBox linkWithIconContainer;
-    private VBox comboBoxValueContainer;
+    private VBox linkWithIconContainer, comboBoxValueContainer, myVoteBox, voteResultBox;
 
     public ProposalDisplay(GridPane gridPane, BsqFormatter bsqFormatter, DaoFacade daoFacade,
-                           @Nullable ChangeParamValidator changeParamValidator) {
+                           @Nullable ChangeParamValidator changeParamValidator, Navigation navigation) {
         this.gridPane = gridPane;
         this.bsqFormatter = bsqFormatter;
         this.daoFacade = daoFacade;
         this.changeParamValidator = changeParamValidator;
+        this.navigation = navigation;
 
         // focusOutListener = observable -> inputChangedListeners.forEach(Runnable::run);
 
@@ -191,10 +194,10 @@ public class ProposalDisplay {
 
         titledGroupBg = addTitledGroupBg(gridPane, gridRow, titledGroupBgRowSpan, title, top);
         double proposalTypeTop = top == Layout.GROUP_DISTANCE ? Layout.FIRST_ROW_AND_GROUP_DISTANCE : Layout.FIRST_ROW_DISTANCE;
-        proposalTypeTextField = FormBuilder.addTopLabelTextField(gridPane, gridRow,
+        proposalTypeTextField = addTopLabelTextField(gridPane, gridRow,
                 Res.get("dao.proposal.display.type"), proposalType.getDisplayName(), proposalTypeTop).second;
 
-        nameTextField = addInputTextField(gridPane, ++gridRow, Res.get("dao.proposal.display.name"));
+        nameTextField = addInputTextField(gridPane, ++gridRow, Res.get("dao.proposal.display.name"), Layout.FIRST_ROW_DISTANCE);
         if (isMakeProposalScreen)
             nameTextField.setValidator(new InputValidator());
         inputControls.add(nameTextField);
@@ -206,7 +209,7 @@ public class ProposalDisplay {
             linkInputTextField.setValidator(new UrlInputValidator());
         inputControls.add(linkInputTextField);
 
-        Tuple3<Label, HyperlinkWithIcon, VBox> tuple = FormBuilder.addTopLabelHyperlinkWithIcon(gridPane, gridRow,
+        Tuple3<Label, HyperlinkWithIcon, VBox> tuple = addTopLabelHyperlinkWithIcon(gridPane, gridRow,
                 Res.get("dao.proposal.display.link"), "", "", 0);
         linkHyperlinkWithIcon = tuple.second;
         linkWithIconContainer = tuple.third;
@@ -239,7 +242,7 @@ public class ProposalDisplay {
                 break;
             case CHANGE_PARAM:
                 checkNotNull(gridPane, "gridPane must not be null");
-                paramComboBox = FormBuilder.<Param>addComboBox(gridPane, ++gridRow,
+                paramComboBox = FormBuilder.addComboBox(gridPane, ++gridRow,
                         Res.get("dao.proposal.display.paramComboBox.label"));
                 comboBoxValueTextFieldIndex = gridRow;
                 checkNotNull(paramComboBox, "paramComboBox must not be null");
@@ -278,7 +281,7 @@ public class ProposalDisplay {
                 paramComboBox.getSelectionModel().selectedItemProperty().addListener(paramChangeListener);
                 break;
             case BONDED_ROLE:
-                bondedRoleTypeComboBox = FormBuilder.<BondedRoleType>addComboBox(gridPane, ++gridRow,
+                bondedRoleTypeComboBox = FormBuilder.addComboBox(gridPane, ++gridRow,
                         Res.get("dao.proposal.display.bondedRoleComboBox.label"));
                 comboBoxValueTextFieldIndex = gridRow;
                 checkNotNull(bondedRoleTypeComboBox, "bondedRoleTypeComboBox must not be null");
@@ -307,7 +310,7 @@ public class ProposalDisplay {
 
                 break;
             case CONFISCATE_BOND:
-                confiscateBondComboBox = FormBuilder.<Bond>addComboBox(gridPane, ++gridRow,
+                confiscateBondComboBox = FormBuilder.addComboBox(gridPane, ++gridRow,
                         Res.get("dao.proposal.display.confiscateBondComboBox.label"));
                 comboBoxValueTextFieldIndex = gridRow;
                 checkNotNull(confiscateBondComboBox, "confiscateBondComboBox must not be null");
@@ -339,7 +342,7 @@ public class ProposalDisplay {
             case GENERIC:
                 break;
             case REMOVE_ASSET:
-                assetComboBox = FormBuilder.<Asset>addComboBox(gridPane, ++gridRow,
+                assetComboBox = FormBuilder.addComboBox(gridPane, ++gridRow,
                         Res.get("dao.proposal.display.assetComboBox.label"));
                 comboBoxValueTextFieldIndex = gridRow;
                 checkNotNull(assetComboBox, "assetComboBox must not be null");
@@ -363,7 +366,7 @@ public class ProposalDisplay {
         }
 
         if (comboBoxValueTextFieldIndex > -1) {
-            Tuple3<Label, TextField, VBox> tuple3 = FormBuilder.addTopLabelReadOnlyTextField(gridPane, comboBoxValueTextFieldIndex,
+            Tuple3<Label, TextField, VBox> tuple3 = addTopLabelReadOnlyTextField(gridPane, comboBoxValueTextFieldIndex,
                     Res.get("dao.proposal.display.option"));
             comboBoxValueTextField = tuple3.second;
             comboBoxValueContainer = tuple3.third;
@@ -378,20 +381,20 @@ public class ProposalDisplay {
         }
 
         Tuple3<Label, TextField, VBox> tuple3 = addTopLabelTextField(gridPane, ++gridRow, Res.get("dao.proposal.display.myVote"));
-        myVoteLabel = tuple3.first;
-        myVoteLabel.setVisible(false);
-        myVoteLabel.setManaged(false);
+
+        myVoteBox = tuple3.third;
+        myVoteBox.setVisible(false);
+        myVoteBox.setManaged(false);
+
         myVoteTextField = tuple3.second;
-        myVoteTextField.setVisible(false);
-        myVoteTextField.setManaged(false);
 
         tuple3 = addTopLabelTextField(gridPane, ++gridRow, Res.get("dao.proposal.display.voteResult"));
-        voteResultLabel = tuple3.first;
-        voteResultLabel.setVisible(false);
-        voteResultLabel.setManaged(false);
+
+        voteResultBox = tuple3.third;
+        voteResultBox.setVisible(false);
+        voteResultBox.setManaged(false);
+
         voteResultTextField = tuple3.second;
-        voteResultTextField.setVisible(false);
-        voteResultTextField.setManaged(false);
 
         addListeners();
     }
@@ -406,10 +409,8 @@ public class ProposalDisplay {
         }
         myVoteTextField.setText(myVote);
 
-        myVoteLabel.setVisible(isNotNull);
-        myVoteLabel.setManaged(isNotNull);
-        myVoteTextField.setVisible(isNotNull);
-        myVoteTextField.setManaged(isNotNull);
+        myVoteBox.setVisible(isNotNull);
+        myVoteBox.setManaged(isNotNull);
     }
 
     public void applyEvaluatedProposal(@Nullable EvaluatedProposal evaluatedProposal) {
@@ -428,10 +429,8 @@ public class ProposalDisplay {
                     threshold, requiredThreshold, quorum, requiredQuorum);
             voteResultTextField.setText(summary);
         }
-        voteResultLabel.setVisible(isEvaluatedProposalNotNull);
-        voteResultLabel.setManaged(isEvaluatedProposalNotNull);
-        voteResultTextField.setVisible(isEvaluatedProposalNotNull);
-        voteResultTextField.setManaged(isEvaluatedProposalNotNull);
+        voteResultBox.setVisible(isEvaluatedProposalNotNull);
+        voteResultBox.setManaged(isEvaluatedProposalNotNull);
     }
 
     public void applyBallotAndVoteWeight(@Nullable Ballot ballot, long merit, long stake) {
@@ -454,10 +453,16 @@ public class ProposalDisplay {
         }
 
         boolean show = ballotIsNotNull && hasVoted;
-        myVoteLabel.setVisible(show);
-        myVoteLabel.setManaged(show);
-        myVoteTextField.setVisible(show);
-        myVoteTextField.setManaged(show);
+        myVoteBox.setVisible(show);
+        myVoteBox.setManaged(show);
+    }
+
+    public void setIsVoteIncludedInResult(boolean isVoteIncludedInResult) {
+        if (!isVoteIncludedInResult && myVoteTextField != null && !myVoteTextField.getText().isEmpty()) {
+            String text = myVoteTextField.getText();
+            myVoteTextField.setText(Res.get("dao.proposal.myVote.invalid") + " - " + text);
+            myVoteTextField.getStyleClass().add("error-text");
+        }
     }
 
     public void applyProposalPayload(Proposal proposal) {
@@ -501,8 +506,11 @@ public class ProposalDisplay {
                     .ifPresent(bond -> {
                         confiscateBondComboBox.getSelectionModel().select(bond);
                         comboBoxValueTextField.setText(confiscateBondComboBox.getConverter().toString(bond));
+                        comboBoxValueTextField.setOnMouseClicked(e ->
+                                navigation.navigateToWithData(bond, MainView.class, DaoView.class, BondingView.class,
+                                BondsView.class));
+                        comboBoxValueTextField.getStyleClass().addAll("hyperlink", "show-hand");
                     });
-
         } else if (proposal instanceof GenericProposal) {
             // do nothing
         } else if (proposal instanceof RemoveAssetProposal) {
@@ -557,9 +565,7 @@ public class ProposalDisplay {
         if (linkHyperlinkWithIcon != null)
             linkHyperlinkWithIcon.clear();
 
-        comboBoxes.stream().filter(Objects::nonNull).forEach(comboBox -> {
-            comboBox.getSelectionModel().clearSelection();
-        });
+        comboBoxes.stream().filter(Objects::nonNull).forEach(comboBox -> comboBox.getSelectionModel().clearSelection());
     }
 
     public void setEditable(boolean isEditable) {
@@ -602,6 +608,10 @@ public class ProposalDisplay {
         return ++gridRow;
     }
 
+    public int getGridRow() {
+        return gridRow;
+    }
+
     @SuppressWarnings("Duplicates")
     public ScrollPane getView() {
         ScrollPane scrollPane = new ScrollPane();
@@ -619,10 +629,10 @@ public class ProposalDisplay {
 
         gridPane.getColumnConstraints().addAll(columnConstraints1);
 
-        AnchorPane.setBottomAnchor(gridPane, 20d);
+        AnchorPane.setBottomAnchor(gridPane, 10d);
         AnchorPane.setRightAnchor(gridPane, 10d);
         AnchorPane.setLeftAnchor(gridPane, 10d);
-        AnchorPane.setTopAnchor(gridPane, 20d);
+        AnchorPane.setTopAnchor(gridPane, 10d);
         anchorPane.getChildren().add(gridPane);
 
         return scrollPane;

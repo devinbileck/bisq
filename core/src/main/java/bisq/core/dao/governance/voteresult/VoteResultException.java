@@ -26,19 +26,20 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
 
+@EqualsAndHashCode(callSuper = true)
 public class VoteResultException extends Exception {
     @Getter
-    private final Cycle cycle;
+    private final int heightOfFirstBlockInCycle;
 
     VoteResultException(Cycle cycle, Throwable cause) {
         super(cause);
-        this.cycle = cycle;
+        this.heightOfFirstBlockInCycle = cycle.getHeightOfFirstBlock();
     }
 
     @Override
     public String toString() {
         return "VoteResultException{" +
-                "\n     cycle=" + cycle +
+                "\n     heightOfFirstBlockInCycle=" + heightOfFirstBlockInCycle +
                 "\n} " + super.toString();
     }
 
@@ -80,24 +81,6 @@ public class VoteResultException extends Exception {
     public static abstract class MissingDataException extends Exception {
         private MissingDataException(String message) {
             super(message);
-        }
-    }
-
-    @EqualsAndHashCode(callSuper = true)
-    @Value
-    public static class MissingBlindVoteDataException extends MissingDataException {
-        private String blindVoteTxId;
-
-        MissingBlindVoteDataException(String blindVoteTxId) {
-            super("Blind vote tx ID " + blindVoteTxId + " is missing");
-            this.blindVoteTxId = blindVoteTxId;
-        }
-
-        @Override
-        public String toString() {
-            return "MissingBlindVoteDataException{" +
-                    "\n     blindVoteTxId='" + blindVoteTxId + '\'' +
-                    "\n} " + super.toString();
         }
     }
 

@@ -17,7 +17,6 @@
 
 package bisq.desktop.main.offer;
 
-import bisq.core.app.BisqEnvironment;
 import bisq.core.arbitration.Arbitrator;
 import bisq.core.btc.TxFeeEstimationService;
 import bisq.core.btc.listeners.BalanceListener;
@@ -83,7 +82,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import javax.annotation.Nullable;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public abstract class MutableOfferDataModel extends OfferDataModel implements BsqBalanceListener {
@@ -226,16 +226,14 @@ public abstract class MutableOfferDataModel extends OfferDataModel implements Bs
 
     private void addListeners() {
         btcWalletService.addBalanceListener(btcBalanceListener);
-        if (BisqEnvironment.isBaseCurrencySupportingBsq())
-            bsqWalletService.addBsqBalanceListener(this);
+        bsqWalletService.addBsqBalanceListener(this);
         user.getPaymentAccountsAsObservable().addListener(paymentAccountsChangeListener);
     }
 
 
     private void removeListeners() {
         btcWalletService.removeBalanceListener(btcBalanceListener);
-        if (BisqEnvironment.isBaseCurrencySupportingBsq())
-            bsqWalletService.removeBsqBalanceListener(this);
+        bsqWalletService.removeBsqBalanceListener(this);
         user.getPaymentAccountsAsObservable().removeListener(paymentAccountsChangeListener);
     }
 
@@ -281,7 +279,7 @@ public abstract class MutableOfferDataModel extends OfferDataModel implements Bs
         priceFeedService.setCurrencyCode(tradeCurrencyCode.get());
 
         // We request to get the actual estimated fee
-        requestTxFee();
+        requestTxFee(null);
 
         // Set the default values (in rare cases if the fee request was not done yet we get the hard coded default values)
         // But offer creation happens usually after that so we should have already the value from the estimation service.
@@ -502,10 +500,12 @@ public abstract class MutableOfferDataModel extends OfferDataModel implements Bs
         this.marketPriceMargin = marketPriceMargin;
     }
 
-    void requestTxFee() {
+    void requestTxFee(@Nullable Runnable actionHandler) {
         feeService.requestFees(() -> {
             txFeeFromFeeService = feeService.getTxFee(feeTxSize);
             calculateTotalToPay();
+            if (actionHandler != null)
+                actionHandler.run();
         });
     }
 
@@ -626,7 +626,7 @@ public abstract class MutableOfferDataModel extends OfferDataModel implements Bs
     }
 
     void calculateTotalToPay() {
-        // Maker does not pay the tx fee for the trade txs because the mining fee might be different when maker
+        // Maker does not pay the mining fee for the trade txs because the mining fee might be different when maker
         // created the offer and reserved his funds, so that would not work well with dynamic fees.
         // The mining fee for the createOfferFee tx is deducted from the createOfferFee and not visible to the trader
         final Coin makerFee = getMakerFee();
