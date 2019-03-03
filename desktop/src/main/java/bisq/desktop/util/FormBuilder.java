@@ -28,6 +28,7 @@ import bisq.desktop.components.BisqTextArea;
 import bisq.desktop.components.BisqTextField;
 import bisq.desktop.components.BsqAddressTextField;
 import bisq.desktop.components.BusyAnimation;
+import bisq.desktop.components.CustomComboBox;
 import bisq.desktop.components.FundsTextField;
 import bisq.desktop.components.HyperlinkWithIcon;
 import bisq.desktop.components.InfoInputTextField;
@@ -939,7 +940,7 @@ public class FormBuilder {
     }
 
     public static <T> ComboBox<T> addComboBox(GridPane gridPane, int rowIndex, String title, double top) {
-        JFXComboBox<T> comboBox = new JFXComboBox<>();
+        CustomComboBox<T> comboBox = new CustomComboBox<>();
         comboBox.setLabelFloat(true);
         comboBox.setPromptText(title);
         comboBox.setMaxWidth(Double.MAX_VALUE);
