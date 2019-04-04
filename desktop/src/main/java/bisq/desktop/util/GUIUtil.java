@@ -65,6 +65,10 @@ import com.googlecode.jcsv.writer.CSVEntryConverter;
 import com.googlecode.jcsv.writer.CSVWriter;
 import com.googlecode.jcsv.writer.internal.CSVWriterBuilder;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+
 import com.google.common.base.Charsets;
 
 import org.apache.commons.lang3.StringUtils;
@@ -260,6 +264,22 @@ public class GUIUtil {
                         .entryConverter(contentConverter)
                         .build();
                 contentWriter.writeAll(list);
+            } catch (RuntimeException | IOException e) {
+                e.printStackTrace();
+                log.error(e.getMessage());
+                new Popup<>().error(Res.get("guiUtil.accountExport.exportFailed", e.getMessage()));
+            }
+        }
+    }
+
+    public static void exportJSON(String fileName, JsonElement data, Stage stage) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialFileName(fileName);
+        File file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            try (OutputStreamWriter outputStreamWriter = new OutputStreamWriter(new FileOutputStream(file, false), Charsets.UTF_8)) {
+                Gson gson = new GsonBuilder().setPrettyPrinting().create();
+                outputStreamWriter.write(gson.toJson(data));
             } catch (RuntimeException | IOException e) {
                 e.printStackTrace();
                 log.error(e.getMessage());
@@ -532,18 +552,16 @@ public class GUIUtil {
     public static Callback<ListView<PaymentMethod>, ListCell<PaymentMethod>> getPaymentMethodCellFactory() {
         return p -> new ListCell<>() {
             @Override
-            protected void updateItem(PaymentMethod item, boolean empty) {
-                super.updateItem(item, empty);
+            protected void updateItem(PaymentMethod method, boolean empty) {
+                super.updateItem(method, empty);
 
-                if (item != null && !empty) {
-
-                    String id = item.getId();
+                if (method != null && !empty) {
+                    String id = method.getId();
 
                     HBox box = new HBox();
                     box.setSpacing(20);
-                    final boolean isBlockchainPaymentMethod = item.equals(PaymentMethod.BLOCK_CHAINS);
                     Label paymentType = new AutoTooltipLabel(
-                            isBlockchainPaymentMethod ? Res.get("shared.crypto") : Res.get("shared.fiat"));
+                            method.isAsset() ? Res.get("shared.crypto") : Res.get("shared.fiat"));
 
                     paymentType.getStyleClass().add("currency-label-small");
                     Label paymentMethod = new AutoTooltipLabel(Res.get(id));
@@ -763,9 +781,8 @@ public class GUIUtil {
                 seed,
                 () -> UserThread.execute(() -> {
                     log.info("Wallets restored with seed words");
-                    new Popup<>().feedback(Res.get("seed.restore.success"))
-                            .useShutDownButton()
-                            .show();
+                    new Popup<>().feedback(Res.get("seed.restore.success")).hideCloseButton().show();
+                    BisqApp.getShutDownHandler().run();
                 }),
                 throwable -> UserThread.execute(() -> {
                     log.error(throwable.toString());
@@ -832,21 +849,42 @@ public class GUIUtil {
         }
     }
 
-    public static void showBsqFeeInfoPopup(Coin fee, Coin miningFee, int txSize, BsqFormatter bsqFormatter,
+    public static void showBsqFeeInfoPopup(Coin fee, Coin miningFee, Coin btcForIssuance, int txSize, BsqFormatter bsqFormatter,
                                            BSFormatter btcFormatter, String type,
                                            Runnable actionHandler) {
+        String confirmationMessage;
+
+        if (btcForIssuance != null) {
+            confirmationMessage = Res.get("dao.feeTx.issuanceProposal.confirm.details",
+                    StringUtils.capitalize(type),
+                    bsqFormatter.formatCoinWithCode(fee),
+                    bsqFormatter.formatBTCWithCode(btcForIssuance),
+                    100,
+                    btcFormatter.formatCoinWithCode(miningFee),
+                    CoinUtil.getFeePerByte(miningFee, txSize),
+                    txSize / 1000d,
+                    type);
+        } else {
+            confirmationMessage = Res.get("dao.feeTx.confirm.details",
+                    StringUtils.capitalize(type),
+                    bsqFormatter.formatCoinWithCode(fee),
+                    btcFormatter.formatCoinWithCode(miningFee),
+                    CoinUtil.getFeePerByte(miningFee, txSize),
+                    txSize / 1000d,
+                    type);
+        }
         new Popup<>().headLine(Res.get("dao.feeTx.confirm", type))
-                .confirmation(Res.get("dao.feeTx.confirm.details",
-                        StringUtils.capitalize(type),
-                        bsqFormatter.formatCoinWithCode(fee),
-                        btcFormatter.formatCoinWithCode(miningFee),
-                        CoinUtil.getFeePerByte(miningFee, txSize),
-                        txSize / 1000d,
-                        type))
+                .confirmation(confirmationMessage)
                 .actionButtonText(Res.get("shared.yes"))
                 .onAction(actionHandler)
                 .closeButtonText(Res.get("shared.cancel"))
                 .show();
+    }
+
+    public static void showBsqFeeInfoPopup(Coin fee, Coin miningFee, int txSize, BsqFormatter bsqFormatter,
+                                           BSFormatter btcFormatter, String type,
+                                           Runnable actionHandler) {
+        showBsqFeeInfoPopup(fee, miningFee, null, txSize, bsqFormatter, btcFormatter, type, actionHandler);
     }
 
     public static void setFitToRowsForTableView(TableView tableView, int rowHeight, int headerHeight, int minNumRows, int maxNumRows) {

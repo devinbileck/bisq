@@ -148,7 +148,7 @@ public class CurrencyUtil {
         currencies.add(new CryptoCurrency("BCH", "Bitcoin Cash"));
         currencies.add(new CryptoCurrency("BCHC", "Bitcoin Clashic"));
         currencies.add(new CryptoCurrency("ACH", "AchieveCoin"));
-        currencies.add(new CryptoCurrency("SC", "SpaceCash"));
+        currencies.add(new CryptoCurrency("SC", "Siacoin"));
         currencies.add(new CryptoCurrency("PPI", "PiedPiper Coin"));
         currencies.add(new CryptoCurrency("PEPECASH", "Pepe Cash"));
         currencies.add(new CryptoCurrency("GRC", "Gridcoin"));
@@ -383,7 +383,7 @@ public class CurrencyUtil {
         try {
             return Currency.getInstance(currencyCode).getDisplayName();
         } catch (Throwable t) {
-            log.debug("No currency name available " + t.getMessage());
+            log.debug("No currency name available {}", t.getMessage());
             return currencyCode;
         }
     }
