@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ./config.sh
+. config.sh
 
 bitcoin_cli="bitcoin-cli -regtest -datadir=.."
 echo -en "testing if bitcoind is running: "
