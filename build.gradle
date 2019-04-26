@@ -1,4 +1,7 @@
 buildscript {
+    ext {
+        springBootVersion = '1.5.10.RELEASE'
+    }
     repositories {
         jcenter()
     }
@@ -7,7 +10,7 @@ buildscript {
         classpath 'com.google.gradle:osdetector-gradle-plugin:1.6.0'
         classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.2'
         classpath files('gradle/witness/gradle-witness.jar')
-        classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.5.10.RELEASE'
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     }
 }
 
@@ -60,6 +63,20 @@ configure(subprojects) {
     }
 }
 
+configure([project(':relay'),
+           project(':pricenode')]) {
+    
+    task deployFinalize {
+        copy {
+            from "$project/start.sh"
+            into "${rootProject.projectDir}/${project}_start.sh"
+        }
+        copy {
+            from "$project/stop.sh"
+            into "${rootProject.projectDir}/${project}_stop.sh"
+        }
+    }
+}
 
 configure([project(':desktop'),
            project(':monitor'),
@@ -111,6 +128,8 @@ configure([project(':desktop'),
             def windowsScriptFile = file("${rootProject.projectDir}/bisq-${applicationName}.bat")
             windowsScriptFile.text = windowsScriptFile.text.replace(
                 'set APP_HOME=%DIRNAME%..', 'set APP_HOME=%DIRNAME%')
+            // Fix for https://github.com/gradle/gradle/issues/1989
+            windowsScriptFile.text = windowsScriptFile.text.replaceAll('set CLASSPATH=.*', 'set CLASSPATH=.;%APP_HOME%/lib/*')
 
             def unixScriptFile = file("${rootProject.projectDir}/bisq-$applicationName")
             unixScriptFile.text = unixScriptFile.text.replace(
@@ -354,6 +373,8 @@ configure(project(':monitor')) {
 
 
 configure(project(':pricenode')) {
+    apply plugin: 'org.springframework.boot'
+
     mainClassName = 'bisq.price.Main'
 
     version = file("src/main/resources/version.txt").text.trim()
@@ -367,8 +388,8 @@ configure(project(':pricenode')) {
         compile("org.knowm.xchange:xchange-bitcoinaverage:4.3.3")
         compile("org.knowm.xchange:xchange-coinmarketcap:4.3.3")
         compile("org.knowm.xchange:xchange-poloniex:4.3.3")
-        compile("org.springframework.boot:spring-boot-starter-web:1.5.10.RELEASE")
-        compile("org.springframework.boot:spring-boot-starter-actuator:1.5.10.RELEASE")
+        compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
+        compile("org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}")
     }
 
     task stage {
