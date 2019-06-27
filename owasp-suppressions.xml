@@ -1,3 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.2.xsd">
+    <!-- Ignore CVE-2018-10237 as we are not using the AtomicDoubleArray or CompoundOrdering classes -->
+    <suppress>
+        <notes><![CDATA[
+      file name: guava-20.0.jar
+      ]]></notes>
+        <gav regex="true">^com\.google\.guava:guava:.*$</gav>
+        <cve>CVE-2018-10237</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: guava-jdk5-17.0.jar
+   ]]></notes>
+        <gav regex="true">^com\.google\.guava:guava-jdk5:.*$</gav>
+        <cve>CVE-2018-10237</cve>
+    </suppress>
 </suppressions>
