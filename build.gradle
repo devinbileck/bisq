@@ -14,6 +14,9 @@ buildscript {
 
 allprojects {
     apply plugin: 'org.owasp.dependencycheck'
+    dependencyCheck {
+        suppressionFile='owasp-suppressions.xml'
+    }
 }
 
 configure(rootProject) {
