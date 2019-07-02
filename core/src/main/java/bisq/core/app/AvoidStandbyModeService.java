@@ -38,6 +38,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 @Slf4j
 public class AvoidStandbyModeService {
@@ -73,22 +74,36 @@ public class AvoidStandbyModeService {
         thread.start();
     }
 
-
     private void play() {
-        if (!isStopped) {
-            OutputStream outputStream = null;
-            InputStream inputStream = null;
-            try {
+        OutputStream outputStream = null;
+        InputStream inputStream = null;
+        File soundFile;
+        AudioInputStream audioInputStream = null;
+        AudioFormat audioFormat = null;
+        try {
+            soundFile = new File(BisqEnvironment.getStaticAppDataDir(), "prevent-app-nap-silent-sound.aiff");
+            if (!soundFile.exists()) {
                 inputStream = getClass().getClassLoader().getResourceAsStream("prevent-app-nap-silent-sound.aiff");
-                File soundFile = new File(BisqEnvironment.getStaticAppDataDir(), "prevent-app-nap-silent-sound.aiff");
-                if (!soundFile.exists()) {
-                    outputStream = new FileOutputStream(soundFile);
-                    IOUtils.copy(inputStream, outputStream);
-                }
-
-                AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundFile);
-                byte tempBuffer[] = new byte[10000];
-                AudioFormat audioFormat = audioInputStream.getFormat();
+                outputStream = new FileOutputStream(soundFile);
+                IOUtils.copy(inputStream, outputStream);
+            }
+            audioInputStream = AudioSystem.getAudioInputStream(soundFile);
+            audioFormat = audioInputStream.getFormat();
+        } catch (IOException | UnsupportedAudioFileException e) {
+            log.error("AvoidStandbyModeService failed; {}", e.toString());
+            isStopped = true;
+        } finally {
+            try {
+                if (inputStream != null)
+                    inputStream.close();
+                if (outputStream != null)
+                    outputStream.close();
+            } catch (IOException ignore) {
+            }
+        }
+        while (!isStopped) {
+            try {
+                byte[] tempBuffer = new byte[10000];
                 DataLine.Info dataLineInfo = new DataLine.Info(SourceDataLine.class, audioFormat);
                 SourceDataLine sourceDataLine = (SourceDataLine) AudioSystem.getLine(dataLineInfo);
                 sourceDataLine.open(audioFormat);
@@ -101,18 +116,9 @@ public class AvoidStandbyModeService {
                 }
                 sourceDataLine.drain();
                 sourceDataLine.close();
-                play();
             } catch (Exception e) {
                 log.error(e.toString());
                 e.printStackTrace();
-            } finally {
-                try {
-                    if (inputStream != null)
-                        inputStream.close();
-                    if (outputStream != null)
-                        outputStream.close();
-                } catch (IOException ignore) {
-                }
             }
         }
     }
