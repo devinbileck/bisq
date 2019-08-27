@@ -73,8 +73,8 @@ public class RpcService {
     private final String rpcUser;
     private final String rpcPassword;
     private final String rpcHost;
-    private final String rpcPort;
-    private final String rpcBlockPort;
+    private final int rpcPort;
+    private final int rpcBlockPort;
 
     private BtcdClient client;
     private BtcdDaemon daemon;
@@ -91,28 +91,25 @@ public class RpcService {
     @SuppressWarnings("WeakerAccess")
     @Inject
     public RpcService(Preferences preferences,
-                      @Named(DaoOptionKeys.RPC_HOST) String rpcHost,
-                      @Named(DaoOptionKeys.RPC_PORT) String rpcPort,
-                      @Named(DaoOptionKeys.RPC_BLOCK_NOTIFICATION_PORT) String rpcBlockPort) {
+                      @Named(DaoOptionKeys.RPC_PORT) String rpcPort) {
+        rpcHost = preferences.getRpcHost();
+        rpcBlockPort = preferences.getBlockNotifyPort();
         this.rpcUser = preferences.getRpcUser();
         this.rpcPassword = preferences.getRpcPw();
 
         // mainnet is 8332, testnet 18332, regtest 18443
         boolean isHostSet = rpcHost != null && !rpcHost.isEmpty();
         boolean isPortSet = rpcPort != null && !rpcPort.isEmpty();
+        boolean isBlockPortSet = rpcBlockPort != 0;
         boolean isMainnet = BisqEnvironment.getBaseCurrencyNetwork().isMainnet();
         boolean isTestnet = BisqEnvironment.getBaseCurrencyNetwork().isTestnet();
         boolean isDaoBetaNet = BisqEnvironment.getBaseCurrencyNetwork().isDaoBetaNet();
-        log.info("The value of rpchost is {}", rpcHost);
         this.rpcHost = isHostSet ? rpcHost : "127.0.0.1";
-        this.rpcPort = isPortSet ? rpcPort :
-                isMainnet || isDaoBetaNet ? "8332" :
-                        isTestnet ? "18332" :
-                                        "18443"; // regtest
-        this.rpcBlockPort = rpcBlockPort != null && !rpcBlockPort.isEmpty() ? rpcBlockPort : "5125";
-
-        log.info("Starting RPCService with btcd-cli4j version {} on {}:{} with user {}", BtcdCli4jVersion.VERSION,
-                this.rpcHost, this.rpcPort, this.rpcUser);
+        this.rpcPort = isPortSet ? Integer.parseInt(rpcPort) :
+                isMainnet || isDaoBetaNet ? 8332 :
+                        isTestnet ? 18332 :
+                                18443; // regtest
+        this.rpcBlockPort = isBlockPortSet ? rpcBlockPort : 5120;
     }
 
 
@@ -123,6 +120,9 @@ public class RpcService {
     void setup(ResultHandler resultHandler, Consumer<Throwable> errorHandler) {
         ListenableFuture<Void> future = executor.submit(() -> {
             try {
+                log.info("Starting RPCService with btcd-cli4j version {} on {}:{} with user {}, listening for blocknotify on port {}",
+                        BtcdCli4jVersion.VERSION, this.rpcHost, this.rpcPort, this.rpcUser, this.rpcBlockPort);
+
                 long startTs = System.currentTimeMillis();
                 PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
                 CloseableHttpClient httpProvider = HttpClients.custom().setConnectionManager(cm).build();

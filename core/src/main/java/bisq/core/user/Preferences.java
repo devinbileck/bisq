@@ -134,7 +134,7 @@ public final class Preferences implements PersistedDataHost, BridgeAddressProvid
     private final Storage<PreferencesPayload> storage;
     private final BisqEnvironment bisqEnvironment;
     private final String btcNodesFromOptions, useTorFlagFromOptions, referralIdFromOptions, fullDaoNodeFromOptions,
-            rpcUserFromOptions, rpcPwFromOptions, blockNotifyPortFromOptions;
+            rpcHostFromOptions, rpcUserFromOptions, rpcPwFromOptions, blockNotifyPortFromOptions;
     @Getter
     private final BooleanProperty useStandbyModeProperty = new SimpleBooleanProperty(prefPayload.isUseStandbyMode());
 
@@ -152,6 +152,7 @@ public final class Preferences implements PersistedDataHost, BridgeAddressProvid
                        @Named(BtcOptionKeys.USE_TOR_FOR_BTC) String useTorFlagFromOptions,
                        @Named(AppOptionKeys.REFERRAL_ID) String referralId,
                        @Named(DaoOptionKeys.FULL_DAO_NODE) String fullDaoNode,
+                       @Named(DaoOptionKeys.RPC_HOST) String rpcHost,
                        @Named(DaoOptionKeys.RPC_USER) String rpcUser,
                        @Named(DaoOptionKeys.RPC_PASSWORD) String rpcPassword,
                        @Named(DaoOptionKeys.RPC_BLOCK_NOTIFICATION_PORT) String rpcBlockNotificationPort) {
@@ -163,6 +164,7 @@ public final class Preferences implements PersistedDataHost, BridgeAddressProvid
         this.useTorFlagFromOptions = useTorFlagFromOptions;
         this.referralIdFromOptions = referralId;
         this.fullDaoNodeFromOptions = fullDaoNode;
+        this.rpcHostFromOptions = rpcHost;
         this.rpcUserFromOptions = rpcUser;
         this.rpcPwFromOptions = rpcPassword;
         this.blockNotifyPortFromOptions = rpcBlockNotificationPort;

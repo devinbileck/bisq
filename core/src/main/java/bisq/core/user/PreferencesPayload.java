@@ -115,6 +115,8 @@ public final class PreferencesPayload implements PersistableEnvelope {
     private boolean useStandbyMode = false;
     private boolean isDaoFullNode = false;
     @Nullable
+    private String rpcHost;
+    @Nullable
     private String rpcUser;
     @Nullable
     private String rpcPw;
@@ -196,6 +198,7 @@ public final class PreferencesPayload implements PersistableEnvelope {
         Optional.ofNullable(customBridges).ifPresent(builder::setCustomBridges);
         Optional.ofNullable(referralId).ifPresent(builder::setReferralId);
         Optional.ofNullable(phoneKeyAndToken).ifPresent(builder::setPhoneKeyAndToken);
+        Optional.ofNullable(rpcHost).ifPresent(builder::setRpcHost);
         Optional.ofNullable(rpcUser).ifPresent(builder::setRpcUser);
         Optional.ofNullable(rpcPw).ifPresent(builder::setRpcPw);
         Optional.ofNullable(takeOfferSelectedPaymentAccountId).ifPresent(builder::setTakeOfferSelectedPaymentAccountId);
@@ -262,6 +265,7 @@ public final class PreferencesPayload implements PersistableEnvelope {
                 proto.getUsePriceNotifications(),
                 proto.getUseStandbyMode(),
                 proto.getIsDaoFullNode(),
+                proto.getRpcHost().isEmpty() ? null : proto.getRpcHost(),
                 proto.getRpcUser().isEmpty() ? null : proto.getRpcUser(),
                 proto.getRpcPw().isEmpty() ? null : proto.getRpcPw(),
                 proto.getTakeOfferSelectedPaymentAccountId().isEmpty() ? null : proto.getTakeOfferSelectedPaymentAccountId(),

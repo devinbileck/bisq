@@ -110,7 +110,7 @@ public class PreferencesView extends ActivatableViewAndModel<GridPane, Preferenc
     private int gridRow = 0;
     private InputTextField transactionFeeInputTextField, ignoreTradersListInputTextField, ignoreDustThresholdInputTextField,
     /*referralIdInputTextField,*/
-    rpcUserTextField, blockNotifyPortTextField;
+    rpcHostTextField, rpcUserTextField, blockNotifyPortTextField;
     private ToggleButton isDaoFullNodeToggleButton;
     private PasswordTextField rpcPwTextField;
     private TitledGroupBg daoOptionsTitledGroupBg;
@@ -140,7 +140,7 @@ public class PreferencesView extends ActivatableViewAndModel<GridPane, Preferenc
     private ObservableList<TradeCurrency> tradeCurrencies;
     private InputTextField deviationInputTextField;
     private ChangeListener<String> deviationListener, ignoreTradersListListener, ignoreDustThresholdListener,
-    /*referralIdListener,*/ rpcUserListener, rpcPwListener, blockNotifyPortListener;
+    /*referralIdListener,*/ rpcHostListener, rpcUserListener, rpcPwListener, blockNotifyPortListener;
     private ChangeListener<Boolean> deviationFocusedListener;
     private ChangeListener<Boolean> useCustomFeeCheckboxListener;
     private ChangeListener<Number> transactionFeeChangeListener;
@@ -160,6 +160,7 @@ public class PreferencesView extends ActivatableViewAndModel<GridPane, Preferenc
                            DaoFacade daoFacade,
                            BSFormatter formatter,
                            @Named(DaoOptionKeys.FULL_DAO_NODE) String fullDaoNode,
+                           @Named(DaoOptionKeys.RPC_HOST) String rpcHost,
                            @Named(DaoOptionKeys.RPC_USER) String rpcUser,
                            @Named(DaoOptionKeys.RPC_PASSWORD) String rpcPassword,
                            @Named(DaoOptionKeys.RPC_BLOCK_NOTIFICATION_PORT) String rpcBlockNotificationPort) {
@@ -171,6 +172,7 @@ public class PreferencesView extends ActivatableViewAndModel<GridPane, Preferenc
         this.daoFacade = daoFacade;
         this.formatter = formatter;
         daoOptionsSet = fullDaoNode != null && !fullDaoNode.isEmpty() &&
+                rpcHost != null && !rpcHost.isEmpty() &&
                 rpcUser != null && !rpcUser.isEmpty() &&
                 rpcPassword != null && !rpcPassword.isEmpty() &&
                 rpcBlockNotificationPort != null && !rpcBlockNotificationPort.isEmpty();
@@ -609,6 +611,9 @@ public class PreferencesView extends ActivatableViewAndModel<GridPane, Preferenc
         GridPane.setHgrow(resyncDaoButton, Priority.ALWAYS);
 
         isDaoFullNodeToggleButton = addSlideToggleButton(root, ++gridRow, Res.get("setting.preferences.dao.isDaoFullNode"));
+        rpcHostTextField = addInputTextField(root, ++gridRow, Res.get("setting.preferences.dao.rpcHost"));
+        rpcHostTextField.setVisible(false);
+        rpcHostTextField.setManaged(false);
         rpcUserTextField = addInputTextField(root, ++gridRow, Res.get("setting.preferences.dao.rpcUser"));
         rpcUserTextField.setVisible(false);
         rpcUserTextField.setManaged(false);
@@ -624,6 +629,7 @@ public class PreferencesView extends ActivatableViewAndModel<GridPane, Preferenc
         blockNotifyPortTextField.setVisible(false);
         blockNotifyPortTextField.setManaged(false);
 
+        rpcHostListener = (observable, oldValue, newValue) -> preferences.setRpcHost(rpcHostTextField.getText());
         rpcUserListener = (observable, oldValue, newValue) -> preferences.setRpcUser(rpcUserTextField.getText());
         rpcPwListener = (observable, oldValue, newValue) -> preferences.setRpcPw(rpcPwTextField.getText());
         blockNotifyPortListener = (observable, oldValue, newValue) -> {
@@ -830,16 +836,19 @@ public class PreferencesView extends ActivatableViewAndModel<GridPane, Preferenc
     private void activateDaoPreferences() {
         boolean daoFullNode = preferences.isDaoFullNode();
         isDaoFullNodeToggleButton.setSelected(daoFullNode);
+        String rpcHost = preferences.getRpcHost();
         String rpcUser = preferences.getRpcUser();
         String rpcPw = preferences.getRpcPw();
         int blockNotifyPort = preferences.getBlockNotifyPort();
-        if (daoFullNode && (rpcUser == null || rpcUser.isEmpty() ||
+        if (daoFullNode && (rpcHost == null || rpcHost.isEmpty() ||
+                rpcUser == null || rpcUser.isEmpty() ||
                 rpcPw == null || rpcPw.isEmpty() ||
                 blockNotifyPort <= 0)) {
             log.warn("You have full DAO node selected but have not provided the rpc username, password and " +
                     "block notify port. We reset daoFullNode to false");
             isDaoFullNodeToggleButton.setSelected(false);
         }
+        rpcHostTextField.setText(rpcHost);
         rpcUserTextField.setText(rpcUser);
         rpcPwTextField.setText(rpcPw);
         blockNotifyPortTextField.setText(blockNotifyPort > 0 ? String.valueOf(blockNotifyPort) : "");
@@ -871,6 +880,7 @@ public class PreferencesView extends ActivatableViewAndModel<GridPane, Preferenc
             updateDaoFields();
         });
 
+        rpcHostTextField.textProperty().addListener(rpcHostListener);
         rpcUserTextField.textProperty().addListener(rpcUserListener);
         rpcPwTextField.textProperty().addListener(rpcPwListener);
         blockNotifyPortTextField.textProperty().addListener(blockNotifyPortListener);
@@ -879,6 +889,8 @@ public class PreferencesView extends ActivatableViewAndModel<GridPane, Preferenc
     private void updateDaoFields() {
         boolean isDaoFullNode = isDaoFullNodeToggleButton.isSelected();
         GridPane.setRowSpan(daoOptionsTitledGroupBg, isDaoFullNode ? 5 : 2);
+        rpcHostTextField.setVisible(isDaoFullNode);
+        rpcHostTextField.setManaged(isDaoFullNode);
         rpcUserTextField.setVisible(isDaoFullNode);
         rpcUserTextField.setManaged(isDaoFullNode);
         rpcPwTextField.setVisible(isDaoFullNode);
@@ -887,12 +899,14 @@ public class PreferencesView extends ActivatableViewAndModel<GridPane, Preferenc
         blockNotifyPortTextField.setManaged(isDaoFullNode);
         preferences.setDaoFullNode(isDaoFullNode);
         if (!isDaoFullNode) {
+            rpcHostTextField.clear();
             rpcUserTextField.clear();
             rpcPwTextField.clear();
             blockNotifyPortTextField.clear();
         }
 
         isDaoFullNodeToggleButton.setDisable(daoOptionsSet);
+        rpcHostTextField.setDisable(daoOptionsSet);
         rpcUserTextField.setDisable(daoOptionsSet);
         rpcPwTextField.setDisable(daoOptionsSet);
         blockNotifyPortTextField.setDisable(daoOptionsSet);
@@ -951,6 +965,7 @@ public class PreferencesView extends ActivatableViewAndModel<GridPane, Preferenc
     private void deactivateDaoPreferences() {
         resyncDaoButton.setOnAction(null);
         isDaoFullNodeToggleButton.setOnAction(null);
+        rpcHostTextField.textProperty().removeListener(rpcHostListener);
         rpcUserTextField.textProperty().removeListener(rpcUserListener);
         rpcPwTextField.textProperty().removeListener(rpcPwListener);
         blockNotifyPortTextField.textProperty().removeListener(blockNotifyPortListener);
