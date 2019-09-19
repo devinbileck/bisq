@@ -277,6 +277,7 @@ public class MobileNotificationsView extends ActivatableView<GridPane, Void> {
             } else {
                 log.error(throwable.toString());
                 new Popup<>().error(throwable.toString()).show();
+                webCamButton.setDisable(false);
             }
         });
     }
