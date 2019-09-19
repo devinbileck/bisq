@@ -47,7 +47,7 @@ class WebCamLauncher extends Thread {
     @Override
     public void run() {
         try {
-            Webcam webCam = Webcam.getDefault(1000); // one second timeout - the default is too long
+            Webcam webCam = Webcam.getDefault(2000); // two second timeout - the default timeout is too long
             if (webCam != null) {
                 Dimension[] sizes = webCam.getViewSizes();
                 Dimension size = sizes[sizes.length - 1]; // the largest size
