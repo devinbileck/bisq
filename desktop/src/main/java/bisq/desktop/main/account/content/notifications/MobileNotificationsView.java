@@ -248,6 +248,8 @@ public class MobileNotificationsView extends ActivatableView<GridPane, Void> {
 
     private void onOpenWebCam() {
         webCamButton.setDisable(true);
+        setPairingTokenFieldsInvisible();
+        setNoWebCamFieldsVisible();
         log.info("Start WebCamLauncher");
         new WebCamLauncher(webCam -> {
             log.info("webCam available");
@@ -281,8 +283,7 @@ public class MobileNotificationsView extends ActivatableView<GridPane, Void> {
 
     private void onNoWebCam() {
         setPairingTokenFieldsVisible();
-        noWebCamButton.setManaged(false);
-        noWebCamButton.setVisible(false);
+        setNoWebCamFieldsInvisible();
     }
 
     private void onErase() {
@@ -644,6 +645,21 @@ public class MobileNotificationsView extends ActivatableView<GridPane, Void> {
     private void setPairingTokenFieldsVisible() {
         tokenInputTextField.setManaged(true);
         tokenInputTextField.setVisible(true);
+    }
+
+    private void setPairingTokenFieldsInvisible() {
+        tokenInputTextField.setManaged(false);
+        tokenInputTextField.setVisible(false);
+    }
+
+    private void setNoWebCamFieldsVisible() {
+        noWebCamButton.setManaged(true);
+        noWebCamButton.setVisible(true);
+    }
+
+    private void setNoWebCamFieldsInvisible() {
+        noWebCamButton.setManaged(false);
+        noWebCamButton.setVisible(false);
     }
 
     private void reset() {
