@@ -67,16 +67,12 @@ Linux/MacOS:
 #!/bin/bash
 echo $1 | nc -w 1 127.0.0.1 5120
 echo $1 | nc -w 1 127.0.0.1 5121
-echo $1 | nc -w 1 127.0.0.1 5122
-echo $1 | nc -w 1 127.0.0.1 5123
 ```
 
 Windows:
 ```batch
 echo %1 | ncat -w 1 127.0.0.1 5120
 echo %1 | ncat -w 1 127.0.0.1 5121
-echo %1 | ncat -w 1 127.0.0.1 5122
-echo %1 | ncat -w 1 127.0.0.1 5123
 ```
 
 
@@ -111,14 +107,15 @@ _Don't forget to use different rpcBlockNotificationPorts for different full node
 
 ### Use the predefined setup
 
-The creation of the genesis tx is a bit cumbersome. To make it easier to get started you can use the [dao-setup.zip](dao-setup.zip) file.
-Extract the file and use those data directories for the Bitcoin Core as well as the Alice and Bob instances which are configured to have the genesis tx as defined in the above program arguments (`30af0050040befd8af25068cc697e418e09c2d8ebd8d411d2240591b9ec203cf` at height `111`).
+The creation of the genesis tx is a bit cumbersome. To make it easier to get started you can use the preconfigured setup within the [dao-setup.zip](../scripts/dao-setup.zip) file.
+It contains data directories for Bitcoin Core as well as the Alice and Bob instances which are configured to have the genesis tx as defined in the above program arguments (`30af0050040befd8af25068cc697e418e09c2d8ebd8d411d2240591b9ec203cf` at height `111`).
+You can either use the [dao-setup.sh](../scripts/dao-setup.sh) / [dao-setup.bat](../scripts/dao-setup.bat) script or manually extract the included directories to their respective locations.
 
 _You need to adjust the path to the `blocknotify` file inside of `bitcoin.conf` before starting Bitcoin Core._
 
 ### Setup a custom DAO genesis transaction
 
-To create your own genesis transaction follow these steps:
+To create your own genesis transaction, you can either use the [create_dao_genesis.sh](../scripts/create_dao_genesis.sh) script, or follow these steps:
 
  - Send 2.50010000 BTC from Bitcoin Core to another address inside Bitcoin Core (label it with `Genesis funding address`).
  - Go to the send screen and open the coin control feature. Select the labeled transaction output of the address labeled with `Genesis funding address`. Use that as the only input source for the genesis tx.
