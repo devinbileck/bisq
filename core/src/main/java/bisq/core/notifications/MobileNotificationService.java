@@ -220,9 +220,9 @@ public class MobileNotificationService {
         String iv = uuid.substring(0, 16);
 
         String cipher = mobileMessageEncryption.encrypt(json, iv);
-        log.info("key = " + mobileModel.getKey());
-        log.info("iv = " + iv);
-        log.info("encryptedJson = " + cipher);
+        log.debug("key = " + mobileModel.getKey());
+        log.debug("iv = " + iv);
+        log.debug("encryptedJson = " + cipher);
 
         doSendMessage(iv, cipher, useSound, resultHandler, errorHandler);
         return true;
@@ -288,9 +288,9 @@ public class MobileNotificationService {
                 "&token=" + tokenAsHex + "&" +
                 "msg=" + msgAsHex;
 
-        log.info("Send: token={}", mobileModel.getToken());
-        log.info("Send: msg={}", msg);
-        log.info("Send: isAndroid={}\nuseSound={}\ntokenAsHex={}\nmsgAsHex={}",
+        log.debug("Send: token={}", mobileModel.getToken());
+        log.debug("Send: msg={}", msg);
+        log.debug("Send: isAndroid={}\nuseSound={}\ntokenAsHex={}\nmsgAsHex={}",
                 isAndroid, useSound, tokenAsHex, msgAsHex);
 
         String threadName = "sendMobileNotification-" + msgAsHex.substring(0, 5) + "...";

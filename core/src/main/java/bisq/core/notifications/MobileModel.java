@@ -23,6 +23,8 @@ import javax.inject.Singleton;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lombok.Data;
 import lombok.Getter;
@@ -85,61 +87,55 @@ public class MobileModel {
         else if (magic.equals(OS.ANDROID.getMagicString()))
             os = OS.ANDROID;
 
-        isContentAvailable = parseDescriptor(descriptor);
+        isContentAvailable = doesSupportContentAvailable(descriptor);
     }
 
     @VisibleForTesting
-    boolean parseDescriptor(String descriptor) {
-        // phone descriptors
+    boolean doesSupportContentAvailable(String descriptor) {
+        // When testing with isContentAvailable set, notifications did not work on an
+        // iPhone 6 but they did work on an iPhone 6S.
+        // We don't know about other versions or models, but we will make assumptions
+        // based on the device descriptor as to whether it supports isContentAvailable.
         /*
-        iPod Touch 5
-        iPod Touch 6
-        iPhone 4
-        iPhone 4s
-        iPhone 5
-        iPhone 5c
-        iPhone 5s
-        iPhone 6
-        iPhone 6 Plus
-        iPhone 6s
-        iPhone 6s Plus
-        iPhone 7
-        iPhone 7 Plus
-        iPhone SE
-        iPhone 8
-        iPhone 8 Plus
-        iPhone X
-        iPhone XS
-        iPhone XS Max
-        iPhone XR
-        iPhone 11
-        iPhone 11 Pro
-        iPhone 11 Pro Max
-        iPad 2
-        iPad 3
-        iPad 4
-        iPad Air
-        iPad Air 2
-        iPad 5
-        iPad 6
-        iPad Mini
-        iPad Mini 2
-        iPad Mini 3
-        iPad Mini 4
-        iPad Pro 9.7 Inch
-        iPad Pro 12.9 Inch
-        iPad Pro 12.9 Inch 2. Generation
-        iPad Pro 10.5 Inch
+        iPod Touch 7 (iPod9,1)
+        iPhone 6s (iPhone8,1)
+        iPhone 6s Plus (iPhone8,2)
+        iPhone SE (iPhone8,4)
+        iPhone 7 (iPhone9,1)
+        iPhone 7 Plus (iPhone9,2)
+        iPhone 8 (iPhone10,1)
+        iPhone 8 Plus (iPhone10,2)
+        iPhone X (iPhone10,3)
+        iPhone XS (iPhone11,2)
+        iPhone XS Max (iPhone11,6)
+        iPhone XR (iPhone11,8)
+        iPhone 11 (iPhone12,1)
+        iPhone 11 Pro (iPhone12,3)
+        iPhone 11 Pro Max (iPhone12,5)
+        iPad Air 2 (iPad5,4)
+        iPad Air 3 (iPad11,4)
+        iPad 5 (iPad6,12)
+        iPad 6 (iPad7,6)
+        iPad 7 (iPad7,12)
+        iPad Mini 4 (iPad5,2)
+        iPad Mini 5 (iPad11,2)
+        iPad Pro 9.7 Inch (iPad6,4)
+        iPad Pro 12.9 Inch (iPad6,8)
+        iPad Pro 10.5 Inch, 2nd Gen (iPad7,4)
+        iPad Pro 12.9 Inch, 2nd Gen (iPad7,2)
+        iPad Pro 11 Inch, 3rd Gen (iPad8,3)
+        iPad Pro 12.9 Inch, 3rd Gen (iPad8,7)
         */
-        // iPhone 6 does not support isContentAvailable, iPhone 6s and 7 does.
-        // We don't know about other versions, but let's assume all above iPhone 6 are ok.
         if (descriptor != null) {
             String[] descriptorTokens = descriptor.split(" ");
-            if (descriptorTokens.length >= 1) {
+            if (descriptorTokens.length > 1 || !descriptor.contains(",")) {
                 String model = descriptorTokens[0];
                 if (model.equals("iPhone")) {
+                    if (descriptorTokens.length == 1) {
+                        return false;
+                    }
                     String versionString = descriptorTokens[1];
-                    String[] validVersions = {"X", "XS", "XR"};
+                    String[] validVersions = {"SE", "X", "XS", "XR"};
                     if (Arrays.asList(validVersions).contains(versionString)) {
                         return true;
                     }
@@ -156,8 +152,40 @@ public class MobileModel {
                         return version > 6 || (version == 6 && versionSuffix.equalsIgnoreCase("s"));
                     } catch (Throwable ignore) {
                     }
-                } else {
-                    return (model.equals("iPad")) && descriptorTokens[1].equals("Pro");
+                } else if (model.equals("iPad")) {
+                    try {
+                        switch (descriptorTokens[1]) {
+                            case "Pro":
+                                return true;
+                            case "Mini":
+                                return Integer.parseInt(descriptorTokens[2]) >= 4;
+                            case "Air":
+                                return Integer.parseInt(descriptorTokens[2]) >= 2;
+                            default:
+                                return Integer.parseInt(descriptorTokens[1]) >= 5;
+                        }
+                    } catch (Throwable ignore) {
+                    }
+                } else if (model.equals("iPod")) {
+                    try {
+                        return descriptorTokens[1].equals("Touch") && Integer.parseInt(descriptorTokens[2]) >= 7;
+                    } catch (Throwable ignore) {
+                    }
+                }
+            } else {
+                Pattern pattern = Pattern.compile("(iPod|iPad|iPhone)(\\d+),(\\d+)");
+                Matcher matcher = pattern.matcher(descriptor);
+                if (matcher.matches()) {
+                    String device = matcher.group(1);
+                    int version = Integer.parseInt(matcher.group(2));
+                    switch (device) {
+                        case "iPod":
+                            return version >= 9;
+                        case "iPad":
+                            return version >= 5;
+                        case "iPhone":
+                            return version >= 8;
+                    }
                 }
             }
         }

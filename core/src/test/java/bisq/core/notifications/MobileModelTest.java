@@ -32,25 +32,33 @@ import static org.junit.Assert.assertEquals;
 public class MobileModelTest {
 
     @Test
-    public void testParseDescriptor() {
+    public void testDoesSupportContentAvailable() {
         MobileModel mobileModel = new MobileModel();
         List<Tuple2<String, Boolean>> list = Arrays.asList(
-                new Tuple2<>("iPod Touch 5", false),
+                new Tuple2<>("iPod Touch", false),
                 new Tuple2<>("iPod Touch 6", false),
+                new Tuple2<>("iPod Touch 7", true),
+                new Tuple2<>("iPod Touch 10", true),    // Doesn't yet exist, ensure it will be parsed correctly
+
+                new Tuple2<>("iPod8,1", false),
+                new Tuple2<>("iPod9,1", true),
+                new Tuple2<>("iPod10,1", true),         // Doesn't yet exist, ensure it will be parsed correctly
+
+                new Tuple2<>("iPhone", false),
+                new Tuple2<>("iPhone 3G", false),
+                new Tuple2<>("iPhone 3GS", false),
                 new Tuple2<>("iPhone 4", false),
                 new Tuple2<>("iPhone 4s", false),
                 new Tuple2<>("iPhone 5", false),
                 new Tuple2<>("iPhone 5c", false),
                 new Tuple2<>("iPhone 5s", false),
-
                 new Tuple2<>("iPhone 6", false),
                 new Tuple2<>("iPhone 6 Plus", false),
                 new Tuple2<>("iPhone 6s", true),
                 new Tuple2<>("iPhone 6s Plus", true),
-
+                new Tuple2<>("iPhone SE", true),
                 new Tuple2<>("iPhone 7", true),
                 new Tuple2<>("iPhone 7 Plus", true),
-                new Tuple2<>("iPhone SE", false), // unclear
                 new Tuple2<>("iPhone 8", true),
                 new Tuple2<>("iPhone 8 Plus", true),
                 new Tuple2<>("iPhone X", true),
@@ -60,30 +68,34 @@ public class MobileModelTest {
                 new Tuple2<>("iPhone 11", true),
                 new Tuple2<>("iPhone 11 Pro", true),
                 new Tuple2<>("iPhone 11 Pro Max", true),
-                new Tuple2<>("iPhone 11S", true), // not sure if this model will exist, but based on past versioning it is possible
-                                                  // need to ensure it will be parsed correctly just in case
+                new Tuple2<>("iPhone 11S", true), // Doesn't exist, but based on past versioning it is possible
+                                                  // Ensure it will be parsed correctly just in case
 
-                new Tuple2<>("iPad 2", false),
-                new Tuple2<>("iPad 3", false),
+                new Tuple2<>("iPhone7,1", false),
+                new Tuple2<>("iPhone8,1", true),
+                new Tuple2<>("iPhone10,1", true),
+
+                new Tuple2<>("iPad", false),
                 new Tuple2<>("iPad 4", false),
+                new Tuple2<>("iPad 5", true),
                 new Tuple2<>("iPad Air", false),
-                new Tuple2<>("iPad Air 2", false),
-                new Tuple2<>("iPad 5", false),
-                new Tuple2<>("iPad 6", false),
+                new Tuple2<>("iPad Air 2", true),
                 new Tuple2<>("iPad Mini", false),
-                new Tuple2<>("iPad Mini 2", false),
                 new Tuple2<>("iPad Mini 3", false),
-                new Tuple2<>("iPad Mini 4", false),
-
+                new Tuple2<>("iPad Mini 4", true),
                 new Tuple2<>("iPad Pro 9.7 Inch", true),
                 new Tuple2<>("iPad Pro 12.9 Inch", true),
-                new Tuple2<>("iPad Pro 12.9 Inch 2. Generation", true),
-                new Tuple2<>("iPad Pro 10.5 Inch", true)
+                new Tuple2<>("iPad Pro 10.5 Inch, 2nd Gen", true),
+                new Tuple2<>("iPad Pro 12.9 Inch, 2nd Gen", true),
+                new Tuple2<>("iPad Pro 11 Inch, 3rd Gen", true),
+                new Tuple2<>("iPad Pro 12.9 Inch, 3rd Gen", true),
+
+                new Tuple2<>("iPad4,1", false),
+                new Tuple2<>("iPad5,4", true)
         );
 
         list.forEach(tuple -> {
-            log.info(tuple.toString());
-            assertEquals("tuple: " + tuple, mobileModel.parseDescriptor(tuple.first), tuple.second);
+            assertEquals("tuple: " + tuple, tuple.second, mobileModel.doesSupportContentAvailable(tuple.first));
         });
 
     }
